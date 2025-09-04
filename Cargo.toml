@@ -1,0 +1,21 @@
+[package]
+name = "ratmq-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8.4"
+dashmap = "6.1.0"
+quick-xml = { version = "0.38.1", features = ["serialize"] }
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1.47.1", features = [
+    "rt-multi-thread",
+    "macros",
+    "signal",
+    "net",
+    "sync",
+    "io-util",
+] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+uuid = { version = "1.18.0", features = ["v4"] }
