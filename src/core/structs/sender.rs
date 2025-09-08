@@ -50,7 +50,7 @@ pub async fn process_messages(
 
                 inprog.insert(msg.clone());
 
-                let payload = Client::build_payload(&msg.text());
+                let payload = msg.text();
                 match client.try_send(payload) {
                     Ok(()) => {}
                     Err(tokio::sync::mpsc::error::TrySendError::Full(payload)) => {

@@ -5,7 +5,7 @@ use dashmap::DashMap;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::debug;
 use tracing_subscriber::{EnvFilter, fmt};
 
 pub mod api;
@@ -74,14 +74,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             // shrink in-progress buffer
-            let ip_len = buffer_clone.len();
-            let ip_cap = buffer_clone.capacity();
+            let (ip_len_before, ip_cap_before, ip_len_after, ip_cap_after) = {
+                let len_ip = buffer_clone.len();
+                let cap_ip = buffer_clone.capacity();
+                buffer_clone.shrink_if_sparse(BUFFER_SIZE);
+                let len_a = buffer_clone.len();
+                let cap_a = buffer_clone.capacity();
+                (len_ip, cap_ip, len_a, cap_a)
+            };
 
             let dt = t0.elapsed();
-            info!(
+            debug!(
                 queue_len_before=%q_len_before, queue_cap_before=%q_cap_before,
                 queue_len_after=%q_len_after,  queue_cap_after=%q_cap_after,
-                inprog_len=%ip_len, inprog_cap=%ip_cap,
+                in_progress_len_before=%ip_len_before, in_progress_cap_before=%ip_cap_before,
+                in_progress_len_after=%ip_len_after,  in_progress_cap_after=%ip_cap_after,
                 elapsed=?dt,
                 "maintenance_tick",
             );

@@ -26,8 +26,12 @@ use crate::core::structs::message::Message;
 use crate::core::structs::queue::Queue;
 
 ///Helper for tacking the first tag of the message
-fn first_tag(xml: &str) -> Option<String> {
-    let mut reader = Reader::from_str(xml);
+fn first_tag(xml: Vec<u8>) -> Option<String> {
+    let Ok(xml_msg) = String::from_utf8(xml) else {
+        warn!("payload_not_utf8_skip");
+        return None;
+    };
+    let mut reader = Reader::from_str(xml_msg.as_str());
     reader.config_mut().trim_text(true);
     let mut buf = Vec::new();
 
@@ -49,8 +53,13 @@ fn first_tag(xml: &str) -> Option<String> {
 }
 
 ///Helper for extraction the attribute
-fn extract_attr(xml: &str, name: &str) -> Option<String> {
-    let mut r = Reader::from_str(xml);
+fn extract_attr(xml: Vec<u8>, name: &str) -> Option<String> {
+    let Ok(xml_msg) = String::from_utf8(xml) else {
+        warn!("payload_not_utf8_skip");
+        return None;
+    };
+
+    let mut r = Reader::from_str(&xml_msg);
     r.config_mut().trim_text(true);
     let mut buf = Vec::new();
 
@@ -153,12 +162,7 @@ impl Dispatcher {
                 return Err(e);
             }
 
-            let Ok(xml_msg) = String::from_utf8(buf) else {
-                warn!("payload_not_utf8_skip");
-                continue;
-            };
-
-            if let Some(tag) = first_tag(&xml_msg) {
+            if let Some(tag) = first_tag(buf.clone()) {
                 match tag.as_str() {
                     "subscribe" => {
                         if registered {
@@ -166,7 +170,7 @@ impl Dispatcher {
                             continue;
                         }
                         //register the new client with it prefetch size
-                        if let Some(prefetch) = extract_attr(&xml_msg, "prefetch") {
+                        if let Some(prefetch) = extract_attr(buf.clone(), "prefetch") {
                             match prefetch.parse::<u32>() {
                                 Ok(pref) => {
                                     if let Some(w) = writer_opt.take() {
@@ -189,9 +193,9 @@ impl Dispatcher {
 
                     //receive the message and add it into the queue
                     "send" => {
-                        if let Some(refer) = extract_attr(&xml_msg, "refer") {
+                        if let Some(refer) = extract_attr(buf.clone(), "refer") {
                             trace!(%refer, "send_frame_received");
-                            queue.lock().await.add(Message::new(&xml_msg, &refer));
+                            queue.lock().await.add(Message::new(buf, refer));
                         } else {
                             warn!("send_without_refer");
                         }
@@ -199,7 +203,7 @@ impl Dispatcher {
 
                     //receive the message refer and remove it from the in progress buffer
                     "ack" => {
-                        if let Some(refer) = extract_attr(&xml_msg, "refer") {
+                        if let Some(refer) = extract_attr(buf.clone(), "refer") {
                             let removed = in_progress.remove(&refer).is_some();
                             debug!(%refer, removed, "ack_received");
                             if removed {

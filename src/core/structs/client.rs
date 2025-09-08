@@ -81,15 +81,9 @@ impl Client {
         self.in_flight.fetch_sub(1, Ordering::AcqRel);
     }
 
-    ///Build the message from the message string
-    #[inline]
-    pub fn build_payload(xml: &str) -> Vec<u8> {
-        xml.as_bytes().to_vec()
-    }
-
     //Trying to send the message
     #[inline]
-    pub fn try_send(&self, payload: Vec<u8>) -> Result<(), mpsc::error::TrySendError<Vec<u8>>> {
-        self.tx.try_send(payload)
+    pub fn try_send(&self, payload: Arc<[u8]>) -> Result<(), mpsc::error::TrySendError<Vec<u8>>> {
+        self.tx.try_send(payload.to_vec())
     }
 }

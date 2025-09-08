@@ -18,7 +18,7 @@ impl InProgressBuffer {
     ///insert into the buffer
     #[inline]
     pub fn insert(&self, message: Message) {
-        self.buffer.insert(message.id(), message);
+        self.buffer.insert(message.id().to_string(), message);
     }
 
     ///remove from the buffer

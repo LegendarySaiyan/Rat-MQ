@@ -1,24 +1,25 @@
 ///The primitive message
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Message {
-    id: String,
-    text: String,
+    id: Arc<str>,
+    text: Arc<[u8]>,
 }
 impl Message {
     ///Creating the new message
-    pub fn new(text: &str, id: &str) -> Self {
+    pub fn new(text: Vec<u8>, id: String) -> Self {
         Self {
-            id: id.to_string(),
-            text: text.to_string(),
+            id: Arc::from(id),
+            text: Arc::<[u8]>::from(text),
         }
     }
     ///Getting the ID
-    pub fn id(&self) -> String {
-        self.id.clone()
+    pub fn id(&self) -> Arc<str> {
+        Arc::clone(&self.id)
     }
     ///Text of the message
-    pub fn text(&self) -> String {
-        self.text.clone()
+    pub fn text(&self) -> Arc<[u8]> {
+        Arc::clone(&self.text)
     }
 }
